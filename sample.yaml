@@ -1,0 +1,406 @@
+esphome:
+  name: "sample"
+  includes:
+    - ld2410.h
+
+web_server:
+  port: 80
+  version: 2
+  include_internal: true
+  ota: false
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+  baud_rate: 0
+  logs:
+    sensor: INFO # DEBUG level with uart_target_output = overload!
+    binary_sensor: INFO
+    text_sensor: INFO
+
+# Enable Home Assistant API
+api:
+
+ota:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Esphome-Web-Fe7Bb8"
+    password: "CJq1qp59cqBe"
+
+captive_portal:
+
+
+# The main setup is the GPIO PIN below and the
+# tx_pin and rx_pin, please remember rx goes to tx of the
+# sensor and tx to rx.
+
+
+binary_sensor:
+  - platform: gpio
+    name: mmwave_presence_ld2410
+    id: mmwave_presence_ld2410
+    pin: GPIO14
+    device_class: motion
+
+uart:
+  id: uart_bus
+  tx_pin: GPIO17
+  rx_pin: GPIO16
+  baud_rate: 256000
+  parity: NONE
+  stop_bits: 1
+#  debug:
+#    direction: BOTH
+#    dummy_receiver: false
+#    after:
+#      delimiter: [0xF8,0xF7,0xF6,0xF5]
+
+custom_component:
+  - lambda: |-
+      auto c = new LD2410(uart_bus);
+      App.register_component(c);
+      return {c};
+    components:
+      - id: ld2410
+
+sensor:
+  - platform: custom
+    lambda: |-
+      auto c = static_cast<LD2410 *>(ld2410);
+      return {c->motionTargetDistance, c->motionTargetEnergy,
+              c->staticTargetDistance, c->staticTargetEnergy,
+              c->detectDistance
+              };
+
+    sensors:
+      - name: "Moving Target Distance"
+      - name: "Moving Target Energy"
+      - name: "Static Target Distance"
+      - name: "Static Target Energy"
+      - name: "Detection Distance"
+
+
+text_sensor:
+  - platform: custom
+    lambda: |-
+      auto c = static_cast<LD2410 *>(ld2410);
+      return {c->version_sensor, 
+              c->staticGateEnergy, c->motionGateEnergy};
+
+    text_sensors:
+      - name: "Version Number"
+      - name: "Static Gate Energy"
+      - name: "Motion Gate Energy"
+
+switch:
+  - platform: custom
+    lambda: |-
+      auto c = static_cast<LD2410 *>(ld2410);
+      return {c->show_stats, c->show_engineering_stats};
+
+    switches:
+      - name: "Show Stats"
+      - name: "Show Engineering Stats"
+
+button:
+  - platform: template
+    name: "reset ld2410"
+    entity_category: diagnostic
+    on_press:
+      - lambda: 'static_cast<LD2410 *>(ld2410)->setConfigMode(true);'
+      - lambda: 'static_cast<LD2410 *>(ld2410)->factoryReset();'
+      - lambda: 'static_cast<LD2410 *>(ld2410)->reboot();'
+      - delay: 500ms
+      - lambda: 'static_cast<LD2410 *>(ld2410)->queryAll();'
+
+
+number:
+  - platform: template
+    id: maxConfigDistance
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "cm"
+    min_value: 75
+    max_value: 600
+    step: 75
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setMaxDistancesAndNoneDuration(x, x, id(noneDuration).state);
+
+  - platform: template
+    id: noneDuration
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "s"
+    min_value: 0
+    max_value: 300
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setMaxDistancesAndNoneDuration(id(maxConfigDistance).state, id(maxConfigDistance).state, x);
+
+  - platform: template
+    id: motionGate0Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setMotionSensitivity(0, x);
+
+  # Not supported by the sensor
+  #  - platform: template
+  #    id: staticGate0Sensitivity
+  #    update_interval: never
+  #    optimistic: true
+  #    unit_of_measurement: "%"
+  #    min_value: 0
+  #    max_value: 100
+  #    step: 1
+  #    set_action:
+  #      - lambda: |-
+  #          auto c = static_cast<LD2410 *>(ld2410);
+  #          c->setStaticSensitivity(0, x);
+
+  - platform: template
+    id: motionGate1Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setMotionSensitivity(1, x);
+
+  # Not supported by the sensor
+  #  - platform: template
+  #    id: staticGate1Sensitivity
+  #    update_interval: never
+  #    optimistic: true
+  #    unit_of_measurement: "%"
+  #    min_value: 0
+  #    max_value: 100
+  #    step: 1
+  #    set_action:
+  #      - lambda: |-
+  #          auto c = static_cast<LD2410 *>(ld2410);
+  #          c->setStaticSensitivity(1, x);
+
+  - platform: template
+    id: motionGate2Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setMotionSensitivity(2, x);
+
+  - platform: template
+    id: staticGate2Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setStaticSensitivity(2, x);
+
+  - platform: template
+    id: motionGate3Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setMotionSensitivity(3, x);
+
+  - platform: template
+    id: staticGate3Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setStaticSensitivity(3, x);
+
+  - platform: template
+    id: motionGate4Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setMotionSensitivity(4, x);
+
+  - platform: template
+    id: staticGate4Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setStaticSensitivity(4, x);
+
+  - platform: template
+    id: motionGate5Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setMotionSensitivity(5, x);
+
+  - platform: template
+    id: staticGate5Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setStaticSensitivity(5, x);
+
+  - platform: template
+    id: motionGate6Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setMotionSensitivity(6, x);
+
+  - platform: template
+    id: staticGate6Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setStaticSensitivity(6, x);
+
+  - platform: template
+    id: motionGate7Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setMotionSensitivity(7, x);
+
+  - platform: template
+    id: staticGate7Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setStaticSensitivity(7, x);
+
+  - platform: template
+    id: motionGate8Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setMotionSensitivity(8, x);
+
+  - platform: template
+    id: staticGate8Sensitivity
+    update_interval: never
+    optimistic: true
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          auto c = static_cast<LD2410 *>(ld2410);
+          c->setStaticSensitivity(8, x);
+  #light:
+  #  - platform: status_led
+  #    name: "ESP Switch state"
+  #    pin: GPIO2
+
+  #  - platform: neopixelbus
+  #    type: GRBW
+  #    variant: WS2812
+  #    pin: GPIO23
+  #    num_leds: 48
+  #    name: "NeoPixel Light"
+  #    effects:
+  #      - random:
+  #      - addressable_scan:
+  #          name: Scan Effect With Custom Values
+  #          move_interval: 100ms
+  #          scan_width: 1
+  #      - addressable_fireworks:
+
