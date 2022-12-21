@@ -12,7 +12,12 @@
  *
  * static also known as stillness, resting, stationary, rest
  * motion also known as movement, exercise
- * unmanned also known as "no time"
+ * unmanned also known as "no time" == unoccupied delay time
+ *
+ * 100% sensitivity means disabled - might need to be changed!
+ *
+ * Pull down useful for OUT GPIO to avoid false readings?
+ *
  * gate
  */
 
