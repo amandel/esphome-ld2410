@@ -81,7 +81,7 @@ public:
     static const uint32_t TARGET_FRAME_END = 0xF5F6F7F8;
 
 
-    static constexpr char *const TAG = "ld2410";
+    static constexpr char *const TAG = (char*) "ld2410";
 
     ConfigSwitch *show_stats = new ConfigSwitch( [this](bool b){this->setShowStats(b);});
     ConfigSwitch *show_engineering_stats = new ConfigSwitch([this](bool b){this->setEngineeringMode(b);});
