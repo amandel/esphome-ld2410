@@ -24,7 +24,7 @@
 
 class VersionSensor : public TextSensor { // , public Sensor {
 public:
-    VersionSensor() : TextSensor("Version Number") {
+    VersionSensor() : TextSensor() {
         // https://esphome.io/api/classesphome_1_1_entity_base.html#a3a714cc57822a7d5fd1df3f045ffa9f4
         set_disabled_by_default(true);
         set_internal(false);
