@@ -255,6 +255,7 @@ public:
     }
 
     void ESP_LOGD_HEX() {
+#ifdef USE_ESP32
         std::string res;
         char buf[256];
         sprintf(buf, "Size: %d Expected %d ", dataBufferPos, expectedDataAmount);
@@ -267,9 +268,11 @@ public:
             res += buf;
         }
         ESP_LOGD(TAG, res.c_str());
+#endif
     }
 
     void ESP_LOGD_HEX(std::vector <uint8_t> bytes, uint8_t separator) {
+#ifdef USE_ESP32
         std::string res;
         size_t len = bytes.size();
         char buf[5];
@@ -281,6 +284,7 @@ public:
             res += buf;
         }
         ESP_LOGD(TAG, res.c_str());
+#endif
     }
 
     bool sendCommand(uint16_t cmd, char *commandValue = nullptr, int commandValueLen = 0) {
