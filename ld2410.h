@@ -456,7 +456,7 @@ public:
             }
             case READ_FIRMWARE_VERSION | RESPONSE: { // Firmware Version ACK
                 FirmwareVersionFrame *msg = (FirmwareVersionFrame *) dataBuffer;
-                char buf[16];
+                char buf[32];
                 sprintf(buf, "V%d.%02x.%08x", msg->majorVersion1, msg->majorVersion2, msg->minorVersion);
                 std::string res;
                 res += buf;
